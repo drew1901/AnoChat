@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ano Chat v1.1</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <!-- Lottie Web -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.9.6/lottie.min.js"></script>
+<style>
+  :root {
+    --primary-color: #1e88e5;
+    --secondary-color: #1565c0;
+    --accent-color: #269b36;
+    --bg-gradient: linear-gradient(135deg, #121212, #1e1e1e);
+    --text-color: #e0e0e0;
+    --container-bg: rgba(30, 30, 30, 0.95);
+    --border-color: #333;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Alap reset */
+  * {
+    box-sizing: border-box;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    font-family: "Poppins", sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-color);
+  }
+  
+  /* Teljes képernyős chat konténer + beúszó animáció */
+  .chat-container {
+    width: 100%;
+    height: 100vh;
+    background-color: var(--container-bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: containerSlideIn 0.7s ease-out forwards;
+  }
+  @keyframes containerSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  header {
+    background: var(--primary-color);
+    padding: 15px;
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #3e3e3e;
+  }
+  
+  .chat-top {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chat-mode-switch, .online-users {
+    text-align: center;
+  }
+  .chat-mode-switch select,
+  .online-users {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: #222;
+    color: var(--text-color);
+    font-size: 1em;
+  }
+  #status {
+    text-align: center;
+    color: #bbb;
+    margin: 5px 0;
+  }
+  
+  .messages {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #1c1c1c;
+  }
+  
+  /* Üzenetek modern animációval */
+  .message {
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 8px;
+    background: #2a2a2a;
+    position: relative;
+    word-wrap: break-word;
+    animation: modernFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes modernFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    60% {
+      opacity: 1;
+      transform: translateY(-5px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  .message.own {
+    background: var(--primary-color);
+    align-self: flex-end;
+  }
+  .message.other {
+    background: #444;
+    align-self: flex-start;
+  }
+  
+  .timestamp {
+    font-size: 0.75em;
+    color: #bbb;
+    margin-top: 5px;
+    text-align: right;
+  }
+  
+  #typingIndicator {
+    padding: 5px 10px;
+    font-size: 0.9em;
+    color: var(--accent-color);
+  }
+  
+  .input-container {
+    display: flex;
+    padding: 10px;
+    background: #222;
+    align-items: center;
+  }
+  .input-container input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    background-color: #333;
+    color: var(--text-color);
+    outline: none;
+    transition: box-shadow 0.3s ease;
+  }
+  .input-container input[type="text"]:focus {
+    box-shadow: 0 0 10px var(--primary-color);
+  }
+  
+  /* Gombok stílusa és interakciós effektusai */
+  button.send-btn {
+    padding: 10px 15px;
+    margin-left: 10px;
+    border: none;
+    border-radius: 5px;
+    background: var(--primary-color);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+  button.send-btn:hover {
+    background: var(--secondary-color);
+  }
+  button.send-btn:active {
+    transform: scale(0.95);
+  }
+  
+  /* Kép küldés gomb és rejtett file input */
+  #sendImageButton {
+    padding: 10px;
+    margin-left: 10px;
+    font-size: 1.5em;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--accent-color);
+    transition: transform 0.3s ease;
+  }
+  #sendImageButton:hover {
+    transform: scale(1.2);
+  }
+  #sendImageButton:active {
+    transform: scale(0.95);
+  }
+  #imageInput {
+    display: none;
+  }
+  
+  #giftButton {
+    margin: 10px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background: var(--accent-color);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+  #giftButton:hover {
+    background: #e68900;
+  }
+  #giftButton:active {
+    transform: scale(0.95);
+  }
+  
+  @keyframes giftSlideIn {
+    0%   { opacity: 0; transform: translateY(50px) scale(0.5); }
+    50%  { opacity: 1; transform: translateY(0) scale(1.2); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .gift-message {
+    width: 150px;
+    height: 150px;
+    text-align: center;
+    animation: giftSlideIn 0.8s ease forwards;
+  }
+  
+  /* Ajándék effekt középre pozícionálása */
+  #giftContainer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1000;
+  }
+  
+  #emojiContainer {
+    display: none;
+    position: absolute;
+    bottom: 80px;
+    left: 10px;
+    z-index: 10000;
+  }
+  #emojiButton {
+    background: transparent;
+    border: none;
+    font-size: 1.8em;
+    cursor: pointer;
+    color: var(--accent-color);
+    transition: transform 0.3s ease;
+  }
+  #emojiButton:hover {
+    transform: scale(1.2);
+  }
+  #emojiButton:active {
+    transform: scale(0.95);
+  }
+  
+  .edit-btn, .delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    padding: 3px 6px;
+    font-size: 0.7em;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+    transition: background 0.3s ease;
+  }
+  .edit-btn:hover, .delete-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+  }
+  .message.own:hover .edit-btn,
+  .message.own:hover .delete-btn {
+    display: block;
+  }
+  
+  .gift-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+  }
+  .gift-modal-content {
+    background: var(--container-bg);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 300px;
+    width: 90%;
+  }
+  .gift-option {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 10px;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    transition: transform 0.3s ease;
+    width: 80px;
+    height: 100px;
+  }
+  .gift-option:hover {
+    transform: scale(1.1);
+  }
+  .gift-preview {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 5px;
+    pointer-events: none;
+  }
+  
+  /* Mobil optimalizáció */
+  @media (max-width: 600px) {
+    header {
+      font-size: 1.3em;
+      padding: 10px;
+    }
+    .chat-mode-switch,
+    .online-users {
+      font-size: 0.9em;
+    }
+    .messages {
+      font-size: 0.95em;
+    }
+    .input-container input[type="text"] {
+      font-size: 1em;
+    }
+    button.send-btn {
+      font-size: 0.95em;
+      padding: 8px 10px;
+      margin-left: 8px;
+    }
+    #sendImageButton {
+      font-size: 1.3em;
+      padding: 8px;
+      margin-left: 8px;
+    }
+    #giftButton {
+      font-size: 0.95em;
+      padding: 8px 10px;
+      margin: 10px auto;
+      display: block;
+    }
+    .gift-modal-content {
+      width: 95%;
+      max-width: 320px;
+    }
+    .gift-option {
+      width: 70px;
+      height: 80px;
+      margin: 5px;
+    }
+    .gift-preview {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 3px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="chat-container">
+    <header>
+      Ano Chat
+      <span id="creditsInfo" style="font-size:0.8em; margin-left:10px; color:#ffc107;"></span>
+    </header>
+
+    <div class="chat-top">
+      <div id="chatModeSwitch" class="chat-mode-switch">
+        <label for="chatModeSelect">Chat Mode:</label>
+        <select id="chatModeSelect">
+          <option value="private">Privát</option>
+          <option value="group">Csoportos</option>
+        </select>
+      </div>
+      <div id="onlineUsers" class="online-users" style="display:none;"></div>
+    </div>
+
+    <p id="status" style="text-align:center;color:#bbb;">Várakozás...</p>
+    <div class="messages" id="messages"></div>
+    <div id="typingIndicator"></div>
+
+    <div class="input-container">
+      <button id="emojiButton" type="button">😊</button>
+      <input type="text" id="messageInput" placeholder="Írj egy üzenetet...">
+      <button class="send-btn" id="sendButton">Küldés</button>
+      <!-- Kép küldés gomb és rejtett file input -->
+      <button id="sendImageButton" type="button">📷</button>
+      <input type="file" id="imageInput" accept="image/*">
+    </div>
+    <button id="findPartnerButton" style="width:100%;margin-top:10px;">Új partner keresése</button>
+    <button id="giftButton">Send Gift</button>
+    <!-- A giftContainer a chat közepén jelenik meg -->
+    <div id="giftContainer"></div>
+    <div id="emojiContainer">
+      <emoji-picker></emoji-picker>
+    </div>
+  </div>
+
+  <!-- Gift Modal -->
+  <div id="giftModal" class="gift-modal">
+    <div class="gift-modal-content">
+      <h3>Válassz ajándékot</h3>
+      <div class="gift-option" data-gift="love">
+        <div class="gift-preview" data-preview="love"></div>
+        Love
+      </div>
+      <div class="gift-option" data-gift="confetti">
+        <div class="gift-preview" data-preview="confetti"></div>
+        Confetti
+      </div>
+      <div class="gift-option" data-gift="star">
+        <div class="gift-preview" data-preview="star"></div>
+        Star
+      </div>
+      <div class="gift-option" data-gift="hey">
+        <div class="gift-preview" data-preview="hey"></div>
+        Hey
+      </div>
+      <div class="gift-option" data-gift="heart">
+        <div class="gift-preview" data-preview="heart"></div>
+        Heart
+      </div>
+      <div class="gift-option" data-gift="diamond">
+        <div class="gift-preview" data-preview="diamond"></div>
+        Diamond
+      </div>
+      <div class="gift-option" data-gift="coins">
+        <div class="gift-preview" data-preview="coins"></div>
+        Coins
+      </div>
+      <button id="closeGiftModal"
+       style="margin-top:10px;padding:8px12px;border:none;border-radius:5px;background:var(--secondary-color);color:#fff;cursor:pointer;">
+       Mégsem
+      </button>
+    </div>
+  </div>
+
+  <!-- Socket.IO -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <!-- Emoji-picker-element -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+  <script>
+    // Függvény a kép tömörítéséhez
+    function compressImage(file, maxWidth, maxHeight, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = (err) => reject(err);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onerror = (err) => reject(err);
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+            // Ha a kép nagyobb, mint a megadott max értékek, átméretezzük
+            if (width > maxWidth || height > maxHeight) {
+              const ratio = Math.min(maxWidth / width, maxHeight / height);
+              width = width * ratio;
+              height = height * ratio;
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            // JPEG formátum, quality: 0-1 közötti érték (például 0.7)
+            resolve(canvas.toDataURL("image/jpeg", quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Socket és egyéb funkciók
+    const previewPaths = {
+      love:"./assets/love.json",
+      confetti:"./assets/confetti.json",
+      star:"./assets/star.json",
+      hey:"./assets/hey.json",
+      heart:"./assets/heart.json",
+      diamond:"./assets/diamond.json",
+      coins:"./assets/coins.json"
+    };
+    const previewAnimations = {};
+
+    let nickname = "";
+    let mode = "private";
+    let socket = null;
+    let typingTimeout;
+    let unreadMessages = 0;
+    const localMessageIds = new Set();
+
+    function getQueryParams(){
+      const params = {};
+      window.location.search.substring(1).split("&").forEach(item => {
+        const parts = item.split("=");
+        params[parts[0]] = decodeURIComponent(parts[1] || "");
+      });
+      return params;
+    }
+
+    // ============= Socket init =============
+    function initializeSocket(currentMode){
+      const statusText = document.getElementById("status");
+      const typingIndicator = document.getElementById("typingIndicator");
+      const onlineUsersDiv = document.getElementById("onlineUsers");
+      const inputField = document.getElementById("messageInput");
+
+      console.log("CSATLAKOZÁS indul... mode=", currentMode);
+
+      socket = io("http://147.194.253.140:3000", {
+        auth: { nickname, mode: currentMode }
+      });
+
+      if(currentMode === "group"){
+        document.getElementById("findPartnerButton").style.display = "none";
+        statusText.innerText = "Csoportos chathez csatlakoztál...";
+      } else {
+        document.getElementById("findPartnerButton").style.display = "block";
+        statusText.innerText = "Várakozás...";
+      }
+
+      socket.on("joinedGroup", (data) => {
+        statusText.innerText = data.message;
+      });
+      socket.on("matched", (data) => {
+        statusText.innerText = data.message + " (" + data.partnerNickname + ")";
+      });
+      socket.on("waiting", (data) => {
+        statusText.innerText = data.message;
+      });
+      socket.on("message", (data) => {
+        if(localMessageIds.has(data.messageId)){
+          localMessageIds.delete(data.messageId);
+          return;
+        }
+        displayMessage(data.text, "other", data.time, data.nickname, data.messageId);
+        if(document.hasFocus()){
+          socket.emit("messageRead", { time: new Date().toLocaleTimeString() });
+        } else {
+          unreadMessages++;
+        }
+      });
+      socket.on("partnerDisconnected", () => {
+        statusText.innerText = "A partnered kilépett.";
+        document.getElementById("messages").innerHTML = "";
+      });
+      socket.on("messageRead", (data) => {
+        const lastMsg = document.querySelector(".own:last-child");
+        if(lastMsg && data && data.time){
+          lastMsg.insertAdjacentHTML("beforeend", `
+            <div class="timestamp">Elolvasva: ${data.time}</div>
+          `);
+        }
+      });
+      socket.on("typing", () => {
+        typingIndicator.innerText = "A partnered ír...";
+      });
+      socket.on("stopTyping", () => {
+        typingIndicator.innerText = "";
+      });
+      socket.on("onlineUsers", (data) => {
+        onlineUsersDiv.style.display = "block";
+        onlineUsersDiv.innerText = `Online: ${data.users.join(", ")} (${data.count})`;
+      });
+      socket.on("messageEdited", (data) => {
+        const msgDiv = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if(msgDiv){
+          msgDiv.querySelector(".message-text").innerHTML = `
+            <strong>${nickname}:</strong> ${data.newText} (szerkesztve: ${data.editedTime})
+          `;
+        }
+      });
+      socket.on("messageDeleted", (data) => {
+        const msgDiv = document.querySelector(`[data-message-id="${data.messageId}"]`);
+        if(msgDiv) msgDiv.remove();
+      });
+      socket.on("giftReceived", (giftData) => {
+        displayGift(giftData);
+      });
+      socket.on("giftError", (errData) => {
+        alert(errData.error);
+      });
+      socket.on("creditsUpdated", (data) => {
+        document.getElementById("creditsInfo").textContent = `Kredit: ${data.credits}`;
+      });
+      socket.on("imageMessage", (data) => {
+        displayImageMessage(data.image, data.nickname, data.time || new Date().toLocaleTimeString());
+      });
+    }
+
+    function displayMessage(text, type, time, senderNickname, messageId){
+      const messagesContainer = document.getElementById("messages");
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message", type);
+      if(messageId){
+        msgDiv.setAttribute("data-message-id", messageId);
+      }
+      msgDiv.innerHTML = `
+        <div class="message-text"><strong>${senderNickname}:</strong> ${text}</div>
+        <div class="timestamp">${time || ""}</div>
+      `;
+      if(type === "own"){
+        const editBtn = document.createElement("button");
+        editBtn.classList.add("edit-btn");
+        editBtn.innerText = "Edit";
+        editBtn.addEventListener("click", () => {
+          const newText = prompt("Írd be az új üzenetet:", text);
+          if(newText && newText.trim() !== ""){
+            socket.emit("editMessage", { messageId, newText: newText.trim() });
+          }
+        });
+        const deleteBtn = document.createElement("button");
+        deleteBtn.classList.add("delete-btn");
+        deleteBtn.innerText = "Delete";
+        deleteBtn.addEventListener("click", () => {
+          if(confirm("Biztosan törlöd az üzenetet?")){
+            socket.emit("deleteMessage", { messageId });
+          }
+        });
+        msgDiv.appendChild(editBtn);
+        msgDiv.appendChild(deleteBtn);
+      }
+      messagesContainer.appendChild(msgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Képüzenet megjelenítése
+    function displayImageMessage(imageData, senderNickname, time) {
+      const messagesContainer = document.getElementById("messages");
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("message", "other");
+      msgDiv.innerHTML = `
+        <div class="message-text"><strong>${senderNickname}:</strong></div>
+        <img src="${imageData}" alt="Kép" style="max-width:100%; border-radius:8px;">
+        <div class="timestamp">${time}</div>
+      `;
+      messagesContainer.appendChild(msgDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function displayGift(giftData){
+      const giftContainer = document.getElementById("giftContainer");
+      const giftDiv = document.createElement("div");
+      giftDiv.classList.add("gift-message");
+      giftDiv.style.width = "150px";
+      giftDiv.style.height = "150px";
+      giftContainer.appendChild(giftDiv);
+
+      let animationPath = previewPaths[giftData.giftType] || previewPaths["love"];
+      console.log("Lottie betöltés:", animationPath);
+      lottie.loadAnimation({
+        container: giftDiv,
+        renderer: "svg",
+        loop: false,
+        autoplay: true,
+        path: animationPath
+      });
+      setTimeout(() => {
+        giftDiv.remove();
+      }, 3000);
+    }
+
+    function sendMessage() {
+      const inputField = document.getElementById("messageInput");
+      const message = inputField.value.trim();
+      if (message) {
+        const messageData = { 
+          text: message, 
+          nickname: nickname 
+        };
+        socket.emit("message", messageData);
+        inputField.value = "";
+      }
+    }
+
+    function findNewPartner(){
+      const messagesContainer = document.getElementById("messages");
+      const statusText = document.getElementById("status");
+      socket.emit("findNewPartner");
+      messagesContainer.innerHTML = "";
+      statusText.innerText = "Új partner keresése...";
+    }
+
+    // Váltás a privát/csoportos chat között
+    function switchMode(newMode){
+      if(socket){
+        socket.disconnect();
+      }
+      document.getElementById("messages").innerHTML = "";
+      document.getElementById("status").innerText = (newMode === "group") ? "Csoportos chathez csatlakozás..." : "Várakozás...";
+      mode = newMode;
+      initializeSocket(mode);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const params = getQueryParams();
+      nickname = params.nickname || "Anon";
+      mode = params.mode || "private";
+
+      // Gift preview init
+      const giftPreviews = document.querySelectorAll(".gift-preview");
+      giftPreviews.forEach(previewDiv => {
+        const giftType = previewDiv.getAttribute("data-preview");
+        const path = previewPaths[giftType] || previewPaths["love"];
+        const anim = lottie.loadAnimation({
+          container: previewDiv,
+          renderer: "svg",
+          loop: true,
+          autoplay: ("ontouchstart" in window) || navigator.maxTouchPoints > 0,
+          path
+        });
+        previewAnimations[giftType] = anim;
+      });
+      // Hover animáció (nem érintőképernyős eszközökön)
+      if (!(("ontouchstart" in window) || navigator.maxTouchPoints > 0)) {
+        const giftOptions = document.querySelectorAll(".gift-option");
+        giftOptions.forEach(opt => {
+          const gType = opt.getAttribute("data-gift");
+          opt.addEventListener("mouseenter", () => {
+            if (previewAnimations[gType]) previewAnimations[gType].goToAndPlay(0);
+          });
+          opt.addEventListener("mouseleave", () => {
+            if (previewAnimations[gType]) previewAnimations[gType].pause();
+          });
+        });
+      }
+
+      document.getElementById("chatModeSelect").value = mode;
+      initializeSocket(mode);
+
+      // Chat mód váltása a select elem alapján
+      document.getElementById("chatModeSelect").addEventListener("change", (e) => {
+        const newMode = e.target.value;
+        switchMode(newMode);
+      });
+
+      // Gift modal kezelése
+      document.getElementById("giftButton").addEventListener("click", () => {
+        document.getElementById("giftModal").style.display = "flex";
+      });
+      document.getElementById("closeGiftModal").addEventListener("click", () => {
+        document.getElementById("giftModal").style.display = "none";
+      });
+      const giftOptions = document.querySelectorAll(".gift-option");
+      giftOptions.forEach(opt => {
+        opt.addEventListener("click", () => {
+          const gType = opt.getAttribute("data-gift");
+          console.log("Selected gift:", gType);
+          socket.emit("sendGift", { giftType: gType, from: nickname });
+          document.getElementById("giftModal").style.display = "none";
+        });
+      });
+
+      // Partner keresés
+      document.getElementById("findPartnerButton").addEventListener("click", findNewPartner);
+
+      // Üzenet küldés
+      document.getElementById("sendButton").addEventListener("click", sendMessage);
+
+      // Emoji kezelés
+      const emojiButton = document.getElementById("emojiButton");
+      const emojiContainer = document.getElementById("emojiContainer");
+      const inputField = document.getElementById("messageInput");
+      emojiButton.addEventListener("click", () => {
+        emojiContainer.style.display = (emojiContainer.style.display === "none" || !emojiContainer.style.display) ? "block" : "none";
+      });
+      const emojiPicker = document.querySelector("emoji-picker");
+      emojiPicker.addEventListener("emoji-click", (event) => {
+        const emoji = event.detail.unicode;
+        inputField.value += emoji;
+        inputField.focus();
+        emojiContainer.style.display = "none";
+      });
+
+      // Kép küldés: az "📷" gomb aktiválja a file inputot
+      document.getElementById("sendImageButton").addEventListener("click", () => {
+        document.getElementById("imageInput").click();
+      });
+      // Kép tömörítése és elküldése
+      document.getElementById("imageInput").addEventListener("change", function() {
+        const file = this.files[0];
+        if(file) {
+          // Maximum 1024x768, 70%-os minőség
+          compressImage(file, 1024, 768, 0.7)
+            .then(compressedDataUrl => {
+              socket.emit("imageMessage", { image: compressedDataUrl, nickname: nickname });
+            })
+            .catch(err => {
+              console.error("Kép tömörítési hiba:", err);
+            });
+        }
+      });
+
+      // Typing jelzés
+      inputField.addEventListener("input", () => {
+        if (inputField.value.trim() !== "") {
+          socket.emit("typing");
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            socket.emit("stopTyping");
+          }, 2000);
+        } else {
+          socket.emit("stopTyping");
+        }
+      });
+      inputField.addEventListener("blur", () => {
+        socket.emit("stopTyping");
+      });
+      inputField.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+      window.addEventListener("focus", () => {
+        if (unreadMessages > 0) {
+          socket.emit("messageRead", { time: new Date().toLocaleTimeString() });
+          unreadMessages = 0;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
